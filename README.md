@@ -120,6 +120,6 @@ CREATE STREAM sensor_data ( id STRING, metrics MAP<String, INT> ) WITH ( KAFKA_T
 CREATE TABLE sensor_metadata ( sensor_id STRING PRIMARY KEY, name STRING, campus STRING, zone STRING ) WITH ( KAFKA_TOPIC='jdbc-sensors', VALUE_FORMAT='JSON', PARTITIONS='10' );
 
 CREATE STREAM sensor_enrich WITH ( KAFKA_TOPIC='data-agg', VALUE_FORMAT='AVRO', PARTITIONS='10' ) AS SELECT id, AS_VALUE(FROM_UNIXTIME(SENSOR_DATA.ROWTIME)) AS date, AS_VALUE(id) as sensor_id, METRICS['temperature'] AS temperature, metrics['humidity'] AS humidity, name, zone, campus FROM sensor_data LEFT JOIN sensor_metadata ON sensor_data.id = sensor_metadata.sensor_id;
-``
+```
 
 ![](https://media-exp1.licdn.com/dms/image/C4D1BAQFMnvw5k083Pg/company-background_10000/0/1571323616993?e=2159024400&v=beta&t=yaKSR3yQbtbj1h5C60It1CgAHkYMyYXlGSEf17EDBFw)
