@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ksql-server
+spec:
+  ports:
+  - port: 8088
+    targetPort: 8088
+    protocol: TCP
+  type: NodePort
+  selector:
+    app: ksql-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ksql-server
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: ksql-server
+  template:
+    metadata:
+      labels:
+        app: ksql-server
+    spec:
+      containers:
+      - name: ksql-server
+        image: confluentinc/ksqldb-server:0.18.0
+        imagePullPolicy: Always
+        env:
+        - name: KSQL_BOOTSTRAP_SERVERS
+          value: "kafka-hs:9092"
+        - name: KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE
+          value: "true"
+        - name: KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE
+          value: "true"
+        - name: KSQL_KSQL_CONNECT_URL
+          value: http://kafka-connect:8085
+        - name: KSQL_LISTENERS
+          value: "http://0.0.0.0:8088"
+        - name: KSQL_KSQL_SCHEMA_REGISTRY_URL
+          value: http://kafka-schema-registry:8089
+        ports:
+        - containerPort: 8088
+        readinessProbe:
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8088
+        livenessProbe:
+          initialDelaySeconds: 20
+          timeoutSeconds: 3
+          periodSeconds: 10
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8088
+        resources:
+          requests:
+            memory: "250Mi"
+            cpu: "250m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ksql-cli
+spec:
+  replicas: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: ksql-cli
+  template:
+    metadata:
+      labels:
+        app: ksql-cli
+    spec:
+      containers:
+      - name: ksql-cli
+        image: confluentinc/ksqldb-cli:0.18.0
+        imagePullPolicy: Always
+        env:
+        - name: KSQL_BOOTSTRAP_SERVERS
+          value: "kafka-hs:9092"
+      restartPolicy: Always

@@ -1,0 +1,98 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-connect
+spec:
+  ports:
+  - port: 8085
+    targetPort: 8085
+    protocol: TCP
+  type: NodePort
+  selector:
+    app: kafka-connect
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-connect
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: kafka-connect
+  template:
+    metadata:
+      labels:
+        app: kafka-connect
+    spec:
+      containers:
+      - name: kafka-connect
+        image: andresgomezfrr/kafka-connect-psql:6.1.1
+        imagePullPolicy: Always
+        env:
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          value: kafka-connect
+        - name: CONNECT_CONFIG_STORAGE_TOPIC
+          value: "connect_config"
+        - name: CONNECT_OFFSET_STORAGE_TOPIC
+          value: "connect_offsets"
+        - name: CONNECT_STATUS_STORAGE_TOPIC
+          value: "connect_status"
+        - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+          value: "3"
+        - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+          value: "3"
+        - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+          value: "3"
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: "kafka-hs:9092"
+        - name: CONNECT_REST_PORT
+          value: "8085"
+        - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_KEY_CONVERTER
+          value: "org.apache.kafka.connect.storage.StringConverter"
+        - name: CONNECT_VALUE_CONVERTER
+          value: "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_INTERNAL_KEY_CONVERTER
+          value: "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_INTERNAL_VALUE_CONVERTER
+          value: "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_PLUGIN_PATH
+          value: "/usr/share/java,/etc/kafka-connect/jars"
+        - name: CONNECT_GROUP_ID
+          value: "kconnect-group"
+        - name: CONNECT_SCHEMA_REGISTRY_URL
+          value: http://kafka-schema-registry:8089
+        ports:
+        - containerPort: 8085
+        readinessProbe:
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8085
+        livenessProbe:
+          initialDelaySeconds: 60
+          timeoutSeconds: 3
+          periodSeconds: 10
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8085
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "1500m"
+      restartPolicy: Always
