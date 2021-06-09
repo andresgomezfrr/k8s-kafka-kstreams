@@ -28,8 +28,9 @@ kubectl apply -f kafka-http.yml
 ### Create ksqlDB (server & cli)
 
 ```bash
+kubectl apply -f schema-registry.yml
 kubectl apply -f ksql-server.yml
-kubectl apply -f ksql-connect.yml
+kubectl apply -f kafka-connect.yml
 ```
 
 ### Create Grafana and PostgresSQL
@@ -138,4 +139,5 @@ CREATE SINK CONNECTOR "jdbc-connector-sink" WITH(
 );
 ```
 
+## Import grafana dashboard
 ![](https://media-exp1.licdn.com/dms/image/C4D1BAQFMnvw5k083Pg/company-background_10000/0/1571323616993?e=2159024400&v=beta&t=yaKSR3yQbtbj1h5C60It1CgAHkYMyYXlGSEf17EDBFw)
